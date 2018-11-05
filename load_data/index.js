@@ -1,19 +1,36 @@
 const path = require("path");
 const fs = require("fs");
-const pathName = path.join(__dirname, "./../Vrp-Set-X/X/X-n101-k25.vrp");
 
 const loadNodeCoord = require("./loadNodeCoord");
 const loadNodeDemand = require("./loadNodeDemand");
-const distanceMatrix = require("./distanceMatrix");
+const distanceMatrix = require("./distance");
+const capacity = require("./capacity");
 
-const data = fs.readFileSync(pathName);
-const dataString = data.toString();
+module.exports = readFile;
 
-const nodeCoord = loadNodeCoord.loadNodeCoord(dataString);
-const nodeDemand = loadNodeDemand.loadNodeDemand(dataString);
+function readFile(pathString) {
+    const pathName = path.join(__dirname, pathString);
+    const data = fs.readFileSync(pathName);
+    const dataString = data.toString();
 
-let nodes = nodeCoord.map(((node, index)=>({...node, ...nodeDemand[index]})));
-nodes = nodes.map((node)=>({...node, neighbors: distanceMatrix.neighbor(node, nodes)}));
+    // return 
+    this.capacity =  loadCapacity(dataString);
+    this.graphData = loadGraphData(dataString);
+}
 
-console.log(nodes[0]);
+const loadCapacity = function (dataString) {
+    return capacity.loadCapacity(dataString);
+}
 
+const loadGraphData = function (dataString) {
+    const nodeCoord = loadNodeCoord.loadNodeCoord(dataString);
+    const nodeDemand = loadNodeDemand.loadNodeDemand(dataString);
+
+    let nodes = nodeCoord.map(((node, index) => ({ ...node,
+        ...nodeDemand[index]
+    })));
+    nodes = nodes.map((node) => ({ ...node,
+        neighbors: distanceMatrix.neighbor(node, nodes)
+    }));
+    return nodes;
+}
