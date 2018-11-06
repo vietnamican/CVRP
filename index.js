@@ -7,11 +7,11 @@ function getVerticeData(index) {
 
 //----------------------------------------------------------------------------------
 
-function calculateCost(solve) {
-    return solve.reduce((cost, currentValue, currentIndex) => {
+function calculateRouteCoust(route) {
+    return route.reduce((cost, currentValue, currentIndex) => {
         const currentVertice = getVerticeData(currentValue);
-        if (getVerticeData(solve[currentIndex + 1])) {
-            const nextStepVerticeIndex = getVerticeData(solve[currentIndex + 1]).index;
+        if (getVerticeData(route[currentIndex + 1])) {
+            const nextStepVerticeIndex = getVerticeData(route[currentIndex + 1]).index;
             const nextStepVertice = currentVertice.neighbors.find(node => node.index == nextStepVerticeIndex);
             return cost + nextStepVertice.distance;
         } else {
@@ -20,10 +20,15 @@ function calculateCost(solve) {
     }, 0)
 }
 
+function calculateSolveCost(solve){
+    return solve.reduce((routeCost, currentValue, currentIndex)=>{
+        return routeCost + calculateRouteCoust(currentValue);
+    }, 0);
+}
 //----------------------------------------------------------------------------------
 function addVertice(index) {
     covered[index - 1] = true;
-    solve.push(index);
+    // solve.push(index);
 }
 
 function isCovered(index) {
@@ -42,15 +47,44 @@ function findNextStep({
     currentVertice,
     currentCapacity
 }) {
+    console.log(currentVertice);
     const neighbors = getVerticeData(currentVertice).neighbors;
     for (let element of neighbors) {
         if (!isCovered(element.index)) {
-            addVertice(element.index);
-            currentVertice = element.index;
-            break;
+            if (currentCapacity - element.demand > 0) {
+                addVertice(element.index);
+                currentVertice = element.index;
+                currentCapacity -= element.demand;
+                break;
+            }
         }
     }
     return [currentVertice, currentCapacity];
+}
+
+
+/**
+ * 
+ */
+function takeAroute(currentVertice, currentCapacity, covered) {
+    let route = [];
+    while (currentCapacity > 0 || !isAllVerticesCovered(covered)) {
+        let tempCurrentVertice = currentVertice;
+        let tempCurrentCapacity = currentCapacity;
+        [tempCurrentVertice, tempCurrentCapacity] = findNextStep({
+            currentVertice,
+            currentCapacity
+        });
+        if (tempCurrentVertice === currentVertice && tempCurrentCapacity === currentCapacity) {
+            route.push("1");
+            break;
+        } else {
+            route.push(currentVertice);
+            currentVertice = tempCurrentVertice;
+            currentCapacity = tempCurrentCapacity;
+        }
+    }
+    return route;
 }
 
 //----------------------------------------------------------------------------------
@@ -63,12 +97,11 @@ function main() {
     let currentVertice = "1";
     addVertice(currentVertice);
     while (!isAllVerticesCovered(covered)) {
-        [currentVertice, currentCapacity] = findNextStep({
-            currentVertice,
-            currentCapacity
-        });
+        solve.push(takeAroute(currentVertice, currentCapacity));
+        currentVertice = "1";
+        addVertice(currentVertice);
     }
     console.log(JSON.stringify(solve));
-    console.log(calculateCost(solve));
+    console.log(calculateSolveCost(solve));
 }
 main();
