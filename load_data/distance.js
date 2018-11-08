@@ -7,7 +7,7 @@ module.exports = {
 function calculateEuclid(node, otherNode) {
     const verticalDistance = node.x - otherNode.x;
     const horizontalDistance = node.y - otherNode.y;
-    return Math.sqrt(verticalDistance * verticalDistance + horizontalDistance * horizontalDistance);
+    return Math.floor(Math.sqrt(verticalDistance * verticalDistance + horizontalDistance * horizontalDistance));
 }
 
 function calculateDistanceMatrix(nodeSet) {
