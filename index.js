@@ -1,5 +1,9 @@
 let Data = require("./load_data/index");
-let data = new Data("./../Vrp-Set-X/X/X-n200-k36.vrp");
+// let data = new Data("./../Vrp-Set-X/X/X-n101-k25.vrp");
+// let data = new Data("./../Vrp-Set-X/X/X-n200-k36.vrp");
+let data = new Data("./../Vrp-Set-X/X/X-n101-k25.vrp");
+// console.log(data.graphData[1]);
+const { clone } = require("./utils");
 
 function getVerticeData(index) {
     return data.graphData[index - 1];
@@ -7,7 +11,6 @@ function getVerticeData(index) {
 
 //----------------------------------------------------------------------------------
 
-//TODO: Optimize calculate
 function calculateRouteCoust(route) {
     const tempRoute = JSON.parse(JSON.stringify(route));
     if (tempRoute.length === 0) {
@@ -38,6 +41,60 @@ function calculateSolveCost(solve) {
     }, 0);
 }
 
+function recalculateCostWhenRemoveVertice(
+    solve,
+    cost,
+    routeIndex,
+    verticeIndex
+) {
+    let newRoute = clone(solve[routeIndex]);
+    newRoute.unshift("1");
+    newRoute.push("1");
+    verticeIndex++;
+    const currentVertice = newRoute[verticeIndex];
+    const prevVertice = newRoute[verticeIndex - 1];
+    const nextVertice = newRoute[verticeIndex + 1];
+    const loss =
+        getVerticeData(prevVertice).neighbors.find(
+            node => node.index === currentVertice
+        ).distance +
+        getVerticeData(currentVertice).neighbors.find(
+            node => node.index === nextVertice
+        ).distance;
+    const gain = getVerticeData(prevVertice).neighbors.find(
+        node => node.index === nextVertice
+    ).distance;
+    const newConst = cost - loss + gain;
+    return newConst;
+}
+function recalculateCostWhenAddVertice(
+    solve,
+    cost,
+    routeIndex,
+    verticeIndex,
+    newVertice
+) {
+    let newRoute = clone(solve[routeIndex]);
+    newRoute.splice(verticeIndex, 0, newVertice);
+    newRoute.unshift("1");
+    newRoute.push("1");
+    verticeIndex++;
+    const currentVertice = newRoute[verticeIndex];
+    const prevVertice = newRoute[verticeIndex - 1];
+    const nextVertice = newRoute[verticeIndex + 1];
+    const gain =
+        getVerticeData(prevVertice).neighbors.find(
+            node => node.index === currentVertice
+        ).distance +
+        getVerticeData(currentVertice).neighbors.find(
+            node => node.index === nextVertice
+        ).distance;
+    const loss = getVerticeData(prevVertice).neighbors.find(
+        node => node.index === nextVertice
+    ).distance;
+    const newConst = cost - loss + gain;
+    return newConst;
+}
 //----------------------------------------------------------------------------------
 function addVertice(index) {
     covered[index - 1] = true;
@@ -92,7 +149,7 @@ function takeAroute(currentVertice, currentCapacity, covered) {
         } else {
             currentVertice = tempCurrentVertice;
             currentCapacity = tempCurrentCapacity;
-
+            // console.log(currentVertice, currentCapacity);
             if (currentVertice !== "1") {
                 route.push(currentVertice);
             }
@@ -131,30 +188,37 @@ function isOverCapacity(route) {
     return capacity < totalCapacity;
 }
 
-function relocate(solve, relocateRouteIndex, relocateVerticeIndex) {
+function relocate(solve, cost, relocateRouteIndex, relocateVerticeIndex) {
     let tempSolve = JSON.parse(JSON.stringify(solve));
     // console.log(tempSolve);
-    let minCost = calculateSolveCost(tempSolve);
+    let minCost = cost;
+    // console.log("use function", minCost);
     let optimizeSolve = solve;
     let relocateVertice = tempSolve[relocateRouteIndex][relocateVerticeIndex];
     tempSolve[relocateRouteIndex].splice(relocateVerticeIndex, 1);
-
+    const tempSolveCost = recalculateCostWhenRemoveVertice(
+        solve,
+        cost,
+        relocateRouteIndex,
+        relocateVertice
+    );
     for (let i = 0; i < tempSolve.length; i++) {
         for (let j = 0; j <= tempSolve[i].length; j++) {
             let relocateSolve = JSON.parse(JSON.stringify(tempSolve));
             relocateSolve[i].splice(j, 0, relocateVertice);
-            if (!isOverCapacity(relocateSolve[i])) {
-                let relocateCost = calculateSolveCost(relocateSolve);
-                if (relocateCost < minCost) {
-                    console.log(calculateSolveCost(relocateSolve));
-                    console.log(relocateSolve);
-                    minCost = relocateCost;
-                    optimizeSolve = relocateSolve;
-                }
+            let relocateCost = recalculateCostWhenAddVertice(
+                relocateSolve,
+                tempSolveCost,
+                i,
+                j
+            );
+            if (relocateCost < minCost && isOverCapacity(relocateSolve[i])) {
+                minCost = relocateCost;
+                optimizeSolve = relocateSolve;
             }
         }
     }
-    return optimizeSolve;
+    return [optimizeSolve, minCost];
 }
 
 function localSearch(solve) {
@@ -163,10 +227,14 @@ function localSearch(solve) {
     let optimizeSolve = JSON.parse(JSON.stringify(solve));
     solve.forEach((route, routeIndex) => {
         route.forEach((vertice, verticeIndex) => {
-            let localSearchSolve = relocate(solve, routeIndex, verticeIndex);
-            let localSearchCost = calculateSolveCost(localSearchSolve);
+            let [localSearchSolve, localSearchCost] = relocate(
+                solve,
+                cost,
+                routeIndex,
+                verticeIndex
+            );
             // console.log(localSearchCost, routeIndex, verticeIndex);
-            if(localSearchCost < minCost){
+            if (localSearchCost < minCost) {
                 optimizeSolve = localSearchSolve;
                 minCost = localSearchCost;
             }
@@ -184,16 +252,16 @@ function main() {
     console.log(solve);
     console.log(calculateSolveCost(solve));
     let count = 0;
-    do{
-        const improveSolve = localSearch(solve);
-        if(calculateSolveCost(improveSolve) < calculateSolveCost(solve)){
-            solve = improveSolve;
-        } else {
-            break;
-        }
-        count++;
-    }while(count < 1)
-    console.log(solve);
-    console.log(calculateSolveCost(solve));
+    // do {
+    //     const improveSolve = localSearch(solve);
+    //     if (calculateSolveCost(improveSolve) < calculateSolveCost(solve)) {
+    //         solve = improveSolve;
+    //     } else {
+    //         break;
+    //     }
+    //     count++;
+    // } while (count < 10);
+    // console.log(solve);
+    // console.log(calculateSolveCost(solve));
 }
 main();
