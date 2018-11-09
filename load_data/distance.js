@@ -27,12 +27,24 @@ function calculateDistanceMatrix(nodeSet) {
 function neighbor(currentNode, nodeSet) {
 
     // remove itself to set of node
-    let neighbor = nodeSet.filter(node => node.index !== currentNode.index);
-    neighbor = neighbor.map(node=>({...node, distance: calculateEuclid(currentNode, node)}))
+    // let neighbor = nodeSet.filter(node => node.index !== currentNode.index);
+    let neighbor = nodeSet;
+    neighbor = neighbor.map(node => ({ ...node,
+        distance: calculateEuclid(currentNode, node)
+    }))
     neighbor.sort((a, b) => {
         const distanceA = calculateEuclid(currentNode, a);
         const distanceB = calculateEuclid(currentNode, b);
         const different = distanceA - distanceB;
+        if (different === 0) {
+            // return a.demand - b.demand;
+            const differentDemand = b.demand - a.demand;
+            if (differentDemand === 0) {
+                return b.x - a.x;
+            }
+            return differentDemand
+
+        }
         return different;
     })
     return neighbor;
