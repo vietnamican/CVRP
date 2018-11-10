@@ -5,6 +5,7 @@ const loadNodeCoord = require("./loadNodeCoord");
 const loadNodeDemand = require("./loadNodeDemand");
 const distanceMatrix = require("./distance");
 const capacity = require("./capacity");
+const dimension = require("./dimensions");
 
 module.exports = readFile;
 
@@ -16,6 +17,7 @@ function readFile(pathString) {
     // return 
     this.capacity =  loadCapacity(dataString);
     this.graphData = loadGraphData(dataString);
+    this.dimension = dimension(dataString);
 }
 
 const loadCapacity = function (dataString) {
