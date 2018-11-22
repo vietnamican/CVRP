@@ -5,7 +5,7 @@ module.exports.loadNodeCoord = (dataString) => {
     // console.log(nodeSplit);
     const cleanNode = nodeSplit.map(node => node.replace(/[\t\r]+/g, " "));
     // console.log(cleanNode);
-    const nodeList = cleanNode
+    let nodeList = cleanNode
         .filter((node, index) => 0 < index && index < cleanNode.length - 1)
         .map(node => {
             const data = node.split(" ");
@@ -15,6 +15,6 @@ module.exports.loadNodeCoord = (dataString) => {
                 y: data[2]
             }) : null;
         })
-
+    // nodeList.unshift({index: "0", x: "0", y: "0"});
     return nodeList;
 }

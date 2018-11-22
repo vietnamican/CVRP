@@ -1,10 +1,12 @@
 const MAX_LOCALSEARCH = 200;
-const MAX_LOCALSEARCH_UNIMPROVE = 50;
+const MAX_LOCALSEARCH_UNIMPROVE = 10;
 let Distance = require("./load_data/distance");
 let Data = require("./load_data/index");
 // let data = new Data("./../Vrp-Set-X/X/X-n101-k25.vrp");
-let data = new Data("./../Vrp-Set-X/X/X-n200-k36.vrp");
+// let data = new Data("./../Vrp-Set-X/X/X-n200-k36.vrp");
 // let data = new Data("./../Vrp-Set-X/X/X-n1001-k43.vrp");
+let data = new Data("./../Vrp-Set-X/X/X-n351-k40.vrp");
+console.log(data.graphData[0]);
 // let data = new Data("./../Vrp-Set-X/X/X-n204-k19.vrp");
 const {
     clone
@@ -35,6 +37,7 @@ function calculateRouteCoust(route) {
     }
     tempRoute.unshift("1");
     tempRoute.push("1");
+    // console.log(tempRoute);
     return tempRoute.reduce((cost, currentValue, currentIndex) => {
         const currentVertice = getVerticeData(currentValue);
         if (getVerticeData(tempRoute[currentIndex + 1])) {
@@ -53,6 +56,7 @@ function calculateRouteCoust(route) {
 
 function calculateSolveCost(solve) {
     return solve.reduce((routeCost, currentValue, currentIndex) => {
+        // currentValue = currentValue.map(node => node + 1);
         return routeCost + calculateRouteCoust(currentValue);
     }, 0);
 }
@@ -189,7 +193,7 @@ function commitRemove(
     relocateVertice
 ) {
     solve[routeIndex].splice(verticeIndex, 1);
-    capacities -= parseInt(getVerticeData(relocateVertice).demand);
+    capacities[routeIndex] -= parseInt(getVerticeData(relocateVertice).demand);
 }
 
 function commitAdd(
@@ -211,6 +215,8 @@ function relocate(
     relocateVerticeIndex,
     capacities
 ) {
+
+    // console.log("");
     let isImprove = false;
     //it is an snapshot after remove vertice
     let removeSolve = clone(solve);
@@ -256,16 +262,17 @@ function relocate(
                     tempCapacities,
                     relocateVertice
                 );
-                if (gain < minGain) {
+                if (gain < minGain && cost - loss + gain < cost) {
                     minGain = gain;
                     minRoute = i;
                     minVertice = j;
                     isImprove = true;
+                    // console.log("i, j", relocateVertice, i, j);
                 }
             }
         }
     }
-    if (isImprove && cost - loss + minGain < cost) {
+    if (isImprove) {
         // when finded the best location for vertice, we must commit the change
         commitAdd(
             removeSolve,
@@ -285,7 +292,7 @@ function relocate(
 
 function oneStepLocalSearch(solve, cost, capacities) {
     let minCost = cost;
-    let optimizeSolve = JSON.parse(JSON.stringify(solve));
+    let optimizeSolve = clone(solve);
     let minCapacities = clone(capacities);
     solve.forEach((route, routeIndex) => {
         route.forEach((vertice, verticeIndex) => {
@@ -300,6 +307,8 @@ function oneStepLocalSearch(solve, cost, capacities) {
                 optimizeSolve = localSearchSolve;
                 minCost = localSearchCost;
                 minCapacities = localCapacities;
+                // console.log(minCost);
+                return [optimizeSolve, minCost, minCapacities];
             }
         });
     });
@@ -327,7 +336,7 @@ function localSearch(solve, cost, capacities) {
         } else {
             countSearchNotImprove++;
         }
-        // console.log(countSearch, countSearchNotImprove);
+        console.log(countSearch, countSearchNotImprove);
         countSearch++;
     } while (
         countSearch < MAX_LOCALSEARCH &&
@@ -398,7 +407,7 @@ function pertubation(solve, cost, capacities) {
     capacities = calcuateCapacities(newSolve);
     cost = calculateSolveCost(newSolve);
     // console.log(JSON.stringify(newSolve));
-    console.log(calculateSolveCost(newSolve));
+    console.log(cost);
     return [newSolve, cost, capacities];
 }
 
@@ -411,9 +420,10 @@ function main() {
     let cost = calculateSolveCost(solve);
     let countSearch = 0;
     let countSearchNotImprove = 0;
-    // console.log(solve);
-    // console.log(cost);
-    // console.log(capacities);
+
+    console.log(solve);
+    console.log(cost);
+    console.log(capacities);
     [solve, cost, capacities] = localSearch(solve, cost, capacities);
     let newSolve = clone(solve);
     let newCapacities = clone(capacities);
@@ -425,12 +435,12 @@ function main() {
             newCost,
             newCapacities
         );
+        // console.log(improveCapacities);
         [improveSolve, improveSolveCost, improveCapacities] = localSearch(
             improveSolve,
             improveSolveCost,
             improveCapacities
         );
-
         // console.log(JSON.stringify(improveSolve));
         console.log(calculateSolveCost(improveSolve));
         // console.log(improveSolve);
@@ -456,4 +466,47 @@ function main() {
     console.log(calculateSolveCost(solve));
     console.log(capacities);
 }
-main();
+// main();
+console.log(calculateSolveCost([
+    [238, 149, 163, 217, 103, 144, 15, 49, 220, 129, 184, 84, 10, 174],
+    [147, 124, 245, 271, 141, 242, 58, 39, 204, 40, 197, 111],
+    [232, 177, 100, 253, 56, 108, 122, 348],
+    [254, 104, 148, 13, 337, 55, 237],
+    [322, 34, 187, 97, 291, 14],
+    [114, 185, 71, 310, 319, 313, 186, 316, 268, 17, 342],
+    [240, 262, 93, 182, 159, 52, 224, 308, 121],
+    [259, 43, 309, 311, 173, 331, 318],
+    [88, 22, 203, 228, 222, 26, 57, 330, 346],
+    [307, 288, 130, 107, 248, 260, 193, 303, 42, 297],
+    [276, 286, 161, 299, 300, 126, 317],
+    [77, 293, 2, 91, 343, 23],
+    [86, 256, 63, 41, 263, 229, 80, 298, 152, 180, 236, 201],
+    [200, 325, 328, 75, 101, 264, 164, 61, 261],
+    [135, 66, 33, 195, 306, 150, 51],
+    [125, 167, 183, 98, 215, 335],
+    [133, 340, 292, 334, 106, 21, 290, 96, 29],
+    [59, 257, 160, 199, 190, 54, 158, 64, 12, 145, 349],
+    [281, 178, 87, 142, 314, 19, 333, 99, 323],
+    [265, 305, 192, 45, 1, 109, 206, 231, 279, 92, 175],
+    [241, 25, 53, 31, 218, 233, 16, 3],
+    [18, 205, 296, 243, 258, 171, 5, 326, 208, 287, 28],
+    [95, 345, 115, 37, 7, 9, 72, 69, 139, 212],
+    [82, 247, 172, 227, 327, 221, 269, 118, 295, 339],
+    [267, 162, 38, 211, 194, 219, 30, 320, 234, 116, 169],
+    [134, 44, 94, 252, 246, 105, 140, 35],
+    [157, 244, 117, 280, 284, 272, 119, 136, 341],
+    [166, 27, 128, 304, 226, 36, 270, 70, 223, 210],
+    [48, 324, 154, 110, 102, 151],
+    [255, 278, 181, 191, 131, 209, 251, 89, 6],
+    [249, 50, 123, 67, 68, 282, 11, 143, 74],
+    [301, 321, 24, 207, 312, 90, 338, 170, 65],
+    [214, 8, 73, 274, 179, 168, 76, 213, 120],
+    [294, 165, 60, 266, 176, 47, 83, 81],
+    [137, 315, 188, 344, 275, 225, 146, 85],
+    [347, 138, 336, 132, 78, 79, 156, 20],
+    [239, 273, 235, 285, 216, 127, 302, 32],
+    [4, 155, 196, 332, 202, 46],
+    [283, 113, 329, 189, 230, 350],
+    [153, 62, 198, 289, 277, 250],
+    [112]
+]));
