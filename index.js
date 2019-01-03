@@ -5,10 +5,11 @@ const MOMENT_LIMIT = START + 1000 * 60;
 console.log(START);
 let Distance = require("./load_data/distance");
 let Data = require("./load_data/index");
-// let data = new Data("./../Vrp-Set-X/X/X-n101-k25.vrp");
+let data = new Data("./../Vrp-Set-X/X/X-n101-k25.vrp");
+// let data = new Data("./../Vrp-Set-X/X/X-n115-k10.vrp");
 // let data = new Data("./../Vrp-Set-X/X/X-n200-k36.vrp");
 // let data = new Data("./../Vrp-Set-X/X/X-n1001-k43.vrp");
-let data = new Data("./../Vrp-Set-X/X/X-n351-k40.vrp");
+// let data = new Data("./../Vrp-Set-X/X/X-n351-k40.vrp");
 // let data = new Data("./../Vrp-Set-X/X/X-n204-k19.vrp");
 const { clone } = require("./utils");
 
