@@ -1,4 +1,4 @@
-# Capacity Vehicle Routing Problem(CVRP)
+# Capacity Vehicle Routing Problem (CVRP)
 
 This is my big exercise of optimization course.
 
